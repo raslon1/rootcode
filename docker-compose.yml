@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:14.3-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    expose:
+      - ${POSTGRES_PORT}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    command: -p ${POSTGRES_PORT}
+    networks:
+      - my_network
+  backend:
+    container_name: rootcode
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+      - "8888:8888"
+    volumes:
+      - ./app/:/app/
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - 'my_network'
+  script:
+    build:
+      context: .
+      dockerfile: DockerfileScript
+    env_file:
+      - .env
+    network_mode: host
+
+networks:
+  my_network:
+    external: true
+    driver: bridge
+
+volumes:
+  postgres_data:
